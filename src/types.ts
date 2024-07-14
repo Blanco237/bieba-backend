@@ -18,7 +18,17 @@ export interface Organization {
   name: string;
   email: string;
   hotp_secret: string;
-  hotp_counter: string;
+  hotp_counter: number;
   api_key: string;
   callback_url: string; 
+}
+
+export interface User {
+  id: string;
+  email: string;
+  phone?: string;
+  fname: string;
+  lname: string;
+  hotp_secret: string;
+  hotp_counter: number;
 }

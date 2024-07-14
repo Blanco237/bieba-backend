@@ -1,9 +1,8 @@
 import bcrypt from "bcrypt";
-import appConstants from "../appConstants";
-const NodeCache = require("node-cache");
+import appConstants from "../../appConstants";
+import crypto from 'crypto'
+import hotp from "./hotp";
 
-const cache = new NodeCache({ stdTTL: 900, checkperiod: 30 });
-const crypto = require("crypto");
 
 class Crypt {
   saltRounds = appConstants.BCRYPT_SALT_ROUNDS || 10;
@@ -44,6 +43,11 @@ class Crypt {
       .update(data)
       .digest("hex");
     return key;
+  }
+
+  genHOTP(key: string, counter: string) {
+    const otp = hotp(key, counter);
+    return otp;
   }
 }
 
