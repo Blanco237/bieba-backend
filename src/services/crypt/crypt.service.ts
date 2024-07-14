@@ -5,7 +5,14 @@ import hotp from "./hotp";
 
 
 class Crypt {
-  saltRounds = appConstants.BCRYPT_SALT_ROUNDS || 10;
+  private saltRounds = 10;
+  private aes_key: Buffer;
+  private aes_iv: Buffer;
+
+  constructor() {
+    this.aes_key = Buffer.from(appConstants.AES_ENC_KEY as string, 'base64')
+    this.aes_iv = Buffer.from(appConstants.AES_ENC_IV as string, 'base64')
+  }
 
   async hash(text: string) {
     try {
@@ -29,6 +36,20 @@ class Crypt {
   private genRandomString () {
     const text = crypto.randomBytes(32).toString("base64").slice(0, -1)
     return text;
+  } 
+
+  private encryptData(data: string): string {
+    const cipher = crypto.createCipheriv('aes-256-cbc', this.aes_key, this.aes_iv);
+    let encrypted = cipher.update(data, 'utf8', 'base64');
+    encrypted += cipher.final('base64');
+    return encrypted;
+  }
+
+  private decryptData(encryptedData: string): string {
+    const decipher = crypto.createDecipheriv('aes-256-cbc', this.aes_key, this.aes_iv);
+    let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
   }
 
   genAPIKEY() {
@@ -42,10 +63,12 @@ class Crypt {
       .createHmac("sha256", appConstants.HASURA_GRAPHQL_ADMIN_SECRET!)
       .update(data)
       .digest("hex");
-    return key;
+    const enc = this.encryptData(key);
+    return enc;
   }
 
-  genHOTP(key: string, counter: string) {
+  genHOTP(enc: string, counter: string) {
+    const key = this.decryptData(enc);
     const otp = hotp(key, counter);
     return otp;
   }
