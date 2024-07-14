@@ -8,6 +8,9 @@ router.get('/', (req, res) => {
 })
 
 router.post('/register', Organization.register)
+router.post('/login', Organization.login)
+router.post('/send-otp', Organization.sendOTP)
+router.post('/verify-otp', Organization.verifyOTP)
 
 
 export default router;

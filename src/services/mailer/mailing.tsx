@@ -18,19 +18,24 @@ export class Mailer{
     this.sender= new Resend("re_VzJuw8hd_3McxZGtyxu1B63NWM6g2szyf")
   }
 
+  private returnStatus (data: any, error: any) {
+    if(error) {
+      console.log(error)
+      return {data: error, status: 'FAILED'}
+    }
+    console.log('Mailer Success')
+    return {data, status: 'SUCCESS'};
+  }
+
   async sendOTPEmail(receiver: string, otp: string | number) {
     const { data, error } = await this.sender.emails.send({
       from: this.from,
       to: [receiver],
-      subject: "Verification Code",
+      subject: this.tagline,
       html: render(<OTPEmail otp={otp} />)
     })
 
-    if(error){
-      return {data: error, status: "FAILED"}
-    }
-
-    return { data: data, status: "SUCCESS"}
+   return this.returnStatus(data, error)
   }
 
 
@@ -42,14 +47,7 @@ export class Mailer{
       html: render(<OrganizationEmail orgID={id} />)
     })
 
-    if(error){
-      console.log({status: "FAILED"})
-      console.log(error);
-      return {data: error, status: "FAILED"}
-    }
-    
-    console.log({status: "SUCCESS"})
-    return { data: data, status: "SUCCESS"}
+    return this.returnStatus(data, error)
   }
 
 
