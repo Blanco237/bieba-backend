@@ -8,6 +8,8 @@ interface OrganizationAPI {
   register: any;
   login: any;
   verify: any;
+  get: any;
+  updateCallback: any;
   sendOTP: any;
   verifyOTP: any;
 }
@@ -16,6 +18,8 @@ const Organization: OrganizationAPI = {
   register: null,
   login: null,
   verify: null,
+  get: null,
+  updateCallback: null,
   sendOTP: null,
   verifyOTP: null,
 };
@@ -105,6 +109,63 @@ Organization.verify = async (req: Request, res: Response) => {
     const crypt = new Crypt();
     const message = crypt.genPusherMessage();
     res.json({ key: org.api_key, message });
+  } catch (e) {
+    res.status(500).json(e);
+  }
+};
+
+Organization.get = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const response = await graphql(
+      `
+        query GetOrganization($id: uuid!) {
+          organizations_by_pk(id: $id) {
+            callback_url
+            email
+            id
+            name
+            secrets_aggregate {
+              aggregate {
+                count
+              }
+            }
+          }
+        }
+      `,
+      { id }
+    );
+    if (!response.data.organizations_by_pk) {
+      return res.status(400).json({ error: "Invalid Organization" });
+    }
+    const organization = response.data.organizations_by_pk;
+    res.json(organization);
+  } catch (e) {
+    res.status(500).json(e);
+  }
+};
+
+Organization.updateCallback = async (req: Request, res: Response) => {
+  const { callback, id } = req.body;
+  try {
+    const response = await graphql(
+      `
+        mutation UpdateCallback($id: uuid!, $callback: String!) {
+          update_organizations_by_pk(
+            pk_columns: { id: $id }
+            _set: { callback_url: $callback }
+          ) {
+            callback_url
+          }
+        }
+      `,
+      { id, callback }
+    );
+    if (!response.data.update_organizations_by_pk) {
+      return res.status(400).json({ error: "Something Went Wrong" });
+    }
+    res.json(response.data.update_organizations_by_pk);
   } catch (e) {
     res.status(500).json(e);
   }

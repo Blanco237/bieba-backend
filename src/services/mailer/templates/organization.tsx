@@ -37,7 +37,10 @@ const OrganizationEmail = ({ orgID }: { orgID: string }) => {
               </Text>
               <Text style={subtitle}>
                 Please visit your{" "}
-                <Link href="https://example.com" style={link}>
+                <Link
+                  href={`http://localhost:5173/dashboard/${orgID}`}
+                  style={link}
+                >
                   dashboard
                 </Link>{" "}
                 and configure your project settings
