@@ -3,7 +3,6 @@ import Appointments from './appointments'
 import appConstants from '../../appConstants'
 import graphql from '../../helpers/graphql'
 import Crypt from '../../services/crypt.service'
-import MailerFunctions from '../mailer/mails'
 
 type PatientFunctionsType = {
   appointments: typeof Appointments
@@ -21,8 +20,6 @@ Patients.add = async (req: Request, res: Response) => {
 
   let password = ''
   let unhashed = ''
-  const crypt = new Crypt()
-  unhashed = await crypt.generateRandomString()
 
   const patientExistQuery = `
   query patientUsernameExist($username: String!, $first_name: String!, $last_name: String!) {
@@ -55,7 +52,7 @@ Patients.add = async (req: Request, res: Response) => {
   }
 
   try {
-    password = await crypt.hash(unhashed)
+    password = ''
   } catch (e) {
     console.error(e)
     return res.status(500).json(e)
@@ -94,13 +91,6 @@ Patients.add = async (req: Request, res: Response) => {
         type: 'Patient'
       }
       try {
-        const response = await MailerFunctions.sendWelcome(
-          patientinfo.email,
-          user
-        )
-        if (response.error) {
-          return res.status(500).json(response.error)
-        }
         return res.json(data)
       } catch (error) {
         return res.status(500).json(error)

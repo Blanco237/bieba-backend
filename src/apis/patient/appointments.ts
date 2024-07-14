@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import graphql from '../../helpers/graphql'
-import { checkAppointmentOverlap, removeFalsy } from '../../helpers/functions'
+import { removeFalsy } from '../../helpers/functions'
 
 const Appointments: { book: any } = {
   book: {}
@@ -62,28 +62,7 @@ Appointments.book = async (req: Request, res: Response) => {
     )
 
     const { patients, doctors } = dailyAptRes.data
-    let overlap = checkAppointmentOverlap(
-      cleanedBody.start_time,
-      cleanedBody.end_time,
-      doctors
-    )
-    if (overlap) {
-      return res.status(400).json({
-        error:
-          'Overlapping Doctor Appointments: Appointments cannot be scheduled at the same time'
-      })
-    }
-    overlap = checkAppointmentOverlap(
-      cleanedBody.start_time,
-      cleanedBody.end_time,
-      patients
-    )
-    if (overlap) {
-      return res.status(400).json({
-        error:
-          'Overlapping Patient Appointments: Appointments cannot be scheduled at the same time'
-      })
-    }
+    
   } catch (e) {
     console.error(e)
     return res.status(500).json({ error: e })

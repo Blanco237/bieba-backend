@@ -1,52 +1,58 @@
-import nodemailer, { Transporter } from "nodemailer";
 import { config } from "dotenv";
 import React from "react";
 import { render } from "@react-email/render";
-
-
-import NovaVerification from "./templates/nova-verification";
-import NovaWelcome from "./templates/nova-welcome";
 import { Resend } from "resend";
+import OTPEmail from "./templates/otp";
+import OrganizationEmail from "./templates/organization";
 
 config();
 
 
 
 export class Mailer{
-  sender: any 
+  sender: Resend
+  from = "Bieba Auth <info@jalphahealth.com>"
+  tagline = "Seamless Authentication"
+  
   constructor(){
     this.sender= new Resend("re_VzJuw8hd_3McxZGtyxu1B63NWM6g2szyf")
   }
 
-  async sendWelcomeEmail(receiver: string, details: any) {
+  async sendOTPEmail(receiver: string, otp: string | number) {
     const { data, error } = await this.sender.emails.send({
-      from: "Jalpha Health <info@jalphahealth.com>",
-      to: [receiver],
-      subject: "Welcome to Jalpha Health",
-      html: render(<NovaWelcome name={details.name} user_name={details.user_name} password={details.password} type={details.type} slug={details.slug}/>),
-    });
-
-    if (error) {
-      return {data: error, status: "FAILED" };
-    }
-
-    return {data: data, status:"SUCCESS" };
-  }
-
-  async sendVerifyEmail(receiver: string, name: string, code: string) {
-    const { data, error } = await this.sender.emails.send({
-      from: "Jalpha Health <info@jalphahealth.com>",
+      from: this.from,
       to: [receiver],
       subject: "Verification Code",
-      html: render(<NovaVerification name={name} verification_code={code} verification_link="" />),
-    });
+      html: render(<OTPEmail otp={otp} />)
+    })
 
-    if (error) {
-      return {data: error, status: "FAILED" };
+    if(error){
+      return {data: error, status: "FAILED"}
     }
 
-    return {data: data, status:"SUCCESS" };
+    return { data: data, status: "SUCCESS"}
   }
+
+
+  async sendOrganizationEmail(receiver: string, id: string) {
+    const { data, error } = await this.sender.emails.send({
+      from: this.from,
+      to: [receiver],
+      subject: this.tagline,
+      html: render(<OrganizationEmail orgID={id} />)
+    })
+
+    if(error){
+      console.log({status: "FAILED"})
+      console.log(error);
+      return {data: error, status: "FAILED"}
+    }
+    
+    console.log({status: "SUCCESS"})
+    return { data: data, status: "SUCCESS"}
+  }
+
+
 };
 
 export default Mailer
