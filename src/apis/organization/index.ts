@@ -7,6 +7,7 @@ import { Request, Response } from "express";
 interface OrganizationAPI {
   register: any;
   login: any;
+  verify: any;
   sendOTP: any;
   verifyOTP: any;
 }
@@ -14,6 +15,7 @@ interface OrganizationAPI {
 const Organization: OrganizationAPI = {
   register: null,
   login: null,
+  verify: null,
   sendOTP: null,
   verifyOTP: null,
 };
@@ -82,6 +84,32 @@ Organization.login = async (req: Request, res: Response) => {
   }
 };
 
+Organization.verify = async (req: Request, res: Response) => {
+  const { key } = req.body;
+
+  try {
+    const response = await graphql(
+      `
+        query FindOrganization($key: String!) {
+          organizations(where: { api_key: { _eq: $key } }) {
+            api_key
+          }
+        }
+      `,
+      { key }
+    );
+    if (!response.data.organizations?.length) {
+      return res.status(400).json({ error: "Invalid Organization" });
+    }
+    const org = response.data.organizations.at(0) as Organization;
+    const crypt = new Crypt();
+    const message = crypt.genPusherMessage();
+    res.json({ key: org.api_key, message });
+  } catch (e) {
+    res.status(500).json(e);
+  }
+};
+
 Organization.sendOTP = async (req: Request, res: Response) => {
   const { id } = req.body;
 
@@ -122,7 +150,7 @@ Organization.verifyOTP = async (req: Request, res: Response) => {
         query FindOrganization($email: String!) {
           organizations(where: { email: { _eq: $email } }) {
             id
-             hotp_secret
+            hotp_secret
             hotp_counter
             api_key
             callback_url

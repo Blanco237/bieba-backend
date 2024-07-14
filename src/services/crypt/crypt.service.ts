@@ -52,6 +52,11 @@ class Crypt {
     return decrypted;
   }
 
+  genPusherMessage() {
+    const message = this.genRandomString();
+    return message;
+  }
+
   genAPIKEY() {
     const key = this.genRandomString();
     return key;

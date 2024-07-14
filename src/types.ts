@@ -8,7 +8,7 @@ declare global {
     groupBy<K extends PropertyKey, T>(
       items: Iterable<T>,
       keySelector: (item: T, index: number) => K
-    ): Partial<Record<K, T[]>>
+    ): Partial<Record<K, T[]>>;
   }
 }
 
@@ -20,7 +20,7 @@ export interface Organization {
   hotp_secret: string;
   hotp_counter: number;
   api_key: string;
-  callback_url: string; 
+  callback_url: string;
 }
 
 export interface User {
@@ -31,4 +31,10 @@ export interface User {
   lname: string;
   hotp_secret: string;
   hotp_counter: number;
+}
+
+export interface Secret {
+  user_id: string;
+  organization_id: string;
+  key: string;
 }

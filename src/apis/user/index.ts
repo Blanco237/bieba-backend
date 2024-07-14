@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { User } from "../../types";
+import { Organization, Secret, User } from "../../types";
 import Crypt from "../../services/crypt/crypt.service";
 import graphql from "../../helpers/graphql";
 import Mailer from "../../services/mailer/mailing";
@@ -7,12 +7,14 @@ import Mailer from "../../services/mailer/mailing";
 interface UserAPI {
   register: any;
   login: any;
+  scan: any;
   verifyOTP: any;
 }
 
 const User: UserAPI = {
   register: null,
   login: null,
+  scan: null,
   verifyOTP: null,
 };
 
@@ -72,6 +74,67 @@ User.login = async (req: Request, res: Response) => {
     const mailer = new Mailer();
     mailer.sendOTPEmail(user.email!, otp);
     res.sendStatus(200);
+  } catch (e) {
+    res.status(500).json(e);
+  }
+};
+
+User.scan = async (req: Request, res: Response) => {
+  const { key, message, id } = req.body;
+
+  try {
+    const orgResponse = await graphql(
+      `
+        query FindOrganization($key: String!) {
+          organizations(where: { api_key: { _eq: $key } }) {
+            id
+            name
+            api_key
+          }
+        }
+      `,
+      { key }
+    );
+    if (!orgResponse.data.organizations?.length) {
+      return res.status(400).json({ error: "Invalid Organization" });
+    }
+    const org = orgResponse.data.organizations.at(0) as Organization;
+
+    // TODO: Broadcast PUSHER Message
+
+    const response = await graphql(
+      `
+        query CheckSecretExist($userID: uuid!, $orgID: uuid!) {
+          secrets_by_pk(user_id: $userID, organization_id: $orgID) {
+            user_id
+            organization_id
+          }
+        }
+      `,
+      { userID: id, orgID: org.id }
+    );
+    if (response.data.secrets_by_pk) {
+      return res.json({ name: org.name });
+    }
+    const crypt = new Crypt();
+    const secret = crypt.genSECRET();
+    const secRes = await graphql(
+      `
+        mutation AddTOTPSecret($data: secrets_insert_input!) {
+          insert_secrets_one(object: $data) {
+            user_id
+            organization_id
+            key
+          }
+        }
+      `,
+      { data: { user_id: id, organization_id: org.id, key: secret } }
+    );
+    if(!secRes.data.insert_secrets_one) {
+      return res.status(400).json({error: 'Could Not Register TOTP'})
+    }
+    const data = secRes.data.insert_secrets_one as Secret
+    res.json({name: org.name, secret: data.key })
   } catch (e) {
     res.status(500).json(e);
   }
