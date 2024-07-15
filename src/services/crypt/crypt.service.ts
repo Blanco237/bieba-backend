@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import appConstants from "../../appConstants";
 import crypto from 'crypto'
 import hotp from "./hotp";
+import TOTP from "./totp";
 
 
 class Crypt {
@@ -59,7 +60,9 @@ class Crypt {
 
   genAPIKEY() {
     const key = this.genRandomString();
-    return key;
+    const regex = /[^a-zA-Z0-9]/g;
+    const cleaned = key.replace(regex, 'p');
+    return cleaned;
   }
 
   genSECRET() {
@@ -76,6 +79,12 @@ class Crypt {
     const key = this.decryptData(enc);
     const otp = hotp(key, counter);
     return otp;
+  }
+
+  checkTOTP(secret: string, totp: string) {
+    const dec = this.decryptData(secret);
+    const totps = TOTP.generateTOTP(dec);
+    return totps.includes(totp);
   }
 }
 

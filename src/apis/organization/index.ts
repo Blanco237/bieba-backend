@@ -97,6 +97,7 @@ Organization.verify = async (req: Request, res: Response) => {
         query FindOrganization($key: String!) {
           organizations(where: { api_key: { _eq: $key } }) {
             api_key
+            name
           }
         }
       `,
@@ -108,7 +109,7 @@ Organization.verify = async (req: Request, res: Response) => {
     const org = response.data.organizations.at(0) as Organization;
     const crypt = new Crypt();
     const message = crypt.genPusherMessage();
-    res.json({ key: org.api_key, message });
+    res.json({ key: org.api_key, name: org.name, message });
   } catch (e) {
     res.status(500).json(e);
   }
@@ -203,6 +204,7 @@ Organization.sendOTP = async (req: Request, res: Response) => {
 };
 
 Organization.verifyOTP = async (req: Request, res: Response) => {
+  console.log(req.body)
   const { email, code } = req.body;
 
   try {
@@ -217,7 +219,6 @@ Organization.verifyOTP = async (req: Request, res: Response) => {
             callback_url
             email
             id
-            logo
             name
           }
         }
@@ -225,7 +226,7 @@ Organization.verifyOTP = async (req: Request, res: Response) => {
       { email }
     );
 
-    if (!response.data.organizations?.length) {
+    if (!response.data?.organizations?.length) {
       return res.status(400).json({ error: "Account Not Found" });
     }
     const data = response.data.organizations.at(0) as Partial<Organization>;
@@ -257,6 +258,7 @@ Organization.verifyOTP = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Invalid Code" });
     }
   } catch (e) {
+    console.log(e);
     res.status(500).json(e);
   }
 };
