@@ -36,5 +36,8 @@ export interface User {
 export interface Secret {
   user_id: string;
   organization_id: string;
+  organization: {
+    name: string;
+  }
   key: string;
 }

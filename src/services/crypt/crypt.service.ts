@@ -45,7 +45,7 @@ class Crypt {
     return encrypted;
   }
 
-  private decryptData(encryptedData: string): string {
+  decryptData(encryptedData: string): string {
     const decipher = crypto.createDecipheriv('aes-256-cbc', this.aes_key, this.aes_iv);
     let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
     decrypted += decipher.final('utf8');

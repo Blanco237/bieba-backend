@@ -7,6 +7,8 @@ router.get('/', (req, res) => {
     res.send('welcome to User')
 })
 
+router.get('/:id', User.secrets);
+
 router.post('/register', User.register);
 router.post('/login', User.login);
 router.post('/scan', User.scan);

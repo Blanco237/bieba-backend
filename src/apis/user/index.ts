@@ -8,6 +8,7 @@ interface UserAPI {
   register: any;
   login: any;
   scan: any;
+  secrets: any;
   verifyOTP: any;
 }
 
@@ -15,6 +16,7 @@ const User: UserAPI = {
   register: null,
   login: null,
   scan: null,
+  secrets: null,
   verifyOTP: null,
 };
 
@@ -51,6 +53,7 @@ User.register = async (req: Request, res: Response) => {
 
 User.login = async (req: Request, res: Response) => {
   const { email } = req.body;
+  const crypt = new Crypt();
 
   try {
     const response = await graphql(
@@ -66,10 +69,34 @@ User.login = async (req: Request, res: Response) => {
       { email }
     );
     if (!response.data.users?.length) {
-      return res.status(400).json({ error: "Account Not Found" });
+      // New User
+      const res = await graphql(
+        `
+          mutation CreateUser($data: users_insert_input!) {
+            insert_users_one(object: $data) {
+              id
+              email
+              hotp_secret
+              hotp_counter
+            }
+          }
+        `,
+        {
+          data: {
+            email,
+            hotp_secret: crypt.genSECRET(),
+          },
+        }
+      );
+      const user = res.data.insert_users_one as User;
+      const otp = crypt.genHOTP(user.hotp_secret!, String(user.hotp_counter));
+      const mailer = new Mailer();
+      mailer.sendOTPEmail(user.email!, otp);
+      res.sendStatus(200);
+      return;
     }
+    // Old User
     const user = response.data.users.at(0) as Partial<User>;
-    const crypt = new Crypt();
     const otp = crypt.genHOTP(user.hotp_secret!, String(user.hotp_counter));
     const mailer = new Mailer();
     mailer.sendOTPEmail(user.email!, otp);
@@ -130,11 +157,42 @@ User.scan = async (req: Request, res: Response) => {
       `,
       { data: { user_id: id, organization_id: org.id, key: secret } }
     );
-    if(!secRes.data.insert_secrets_one) {
-      return res.status(400).json({error: 'Could Not Register TOTP'})
+    if (!secRes.data.insert_secrets_one) {
+      return res.status(400).json({ error: "Could Not Register TOTP" });
     }
-    const data = secRes.data.insert_secrets_one as Secret
-    res.json({name: org.name, secret: data.key })
+    const data = secRes.data.insert_secrets_one as Secret;
+    res.json({ name: org.name, secret: data.key });
+  } catch (e) {
+    res.status(500).json(e);
+  }
+};
+
+User.secrets = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const response = await graphql(
+      `
+        query FindSecrets($id: uuid!) {
+          secrets(where: { user_id: { _eq: $id } }) {
+            key
+            organization {
+              name
+            }
+          }
+        }
+      `,
+      { id }
+    );
+    const crypt = new Crypt();
+    const secs = response.data.secrets as Secret[];
+    const secrets = secs.map((s) => {
+      return {
+        name: s.organization.name,
+        secret: crypt.decryptData(s.key),
+      };
+    });
+
+    res.json(secrets);
   } catch (e) {
     res.status(500).json(e);
   }
@@ -149,10 +207,8 @@ User.verifyOTP = async (req: Request, res: Response) => {
           users(where: { email: { _eq: $email } }) {
             id
             email
-            fname
             hotp_counter
             hotp_secret
-            lname
             phone
           }
         }
