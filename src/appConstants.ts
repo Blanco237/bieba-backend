@@ -22,6 +22,13 @@ const appConstants = {
     DOCTOR: 'DOCTOR',
     FRONT_DESK: 'FRONT-DESK',
     ADMIN: 'ADMIN'
+  },
+  PUSHER: {
+    APP_ID: process.env.PUSHER_APP_ID!,
+    KEY: process.env.PUSHER_KEY!,
+    SECRET: process.env.PUSHER_SECRET!,
+    CLUSTER: process.env.PUSHER_CLUSTER!,
+    USE_TLS: false,
   }
 }
 
