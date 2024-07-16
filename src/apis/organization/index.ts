@@ -10,6 +10,7 @@ interface OrganizationAPI {
   verify: any;
   get: any;
   updateCallback: any;
+  getUser: any;
   sendOTP: any;
   verifyOTP: any;
 }
@@ -20,6 +21,7 @@ const Organization: OrganizationAPI = {
   verify: null,
   get: null,
   updateCallback: null,
+  getUser: null,
   sendOTP: null,
   verifyOTP: null,
 };
@@ -98,6 +100,7 @@ Organization.verify = async (req: Request, res: Response) => {
           organizations(where: { api_key: { _eq: $key } }) {
             api_key
             name
+            callback_url
           }
         }
       `,
@@ -109,7 +112,7 @@ Organization.verify = async (req: Request, res: Response) => {
     const org = response.data.organizations.at(0) as Organization;
     const crypt = new Crypt();
     const message = crypt.genPusherMessage();
-    res.json({ key: org.api_key, name: org.name, message });
+    res.json({ key: org.api_key, name: org.name, callback: org.callback_url, message });
   } catch (e) {
     res.status(500).json(e);
   }
@@ -171,6 +174,14 @@ Organization.updateCallback = async (req: Request, res: Response) => {
     res.status(500).json(e);
   }
 };
+
+Organization.getUser = async (req: Request, res: Response) => {
+  const { code } = req.body;
+  const crypt = new Crypt();
+  const decoded = crypt.decryptData(code);
+  const data = JSON.parse(decoded);
+  res.json(data);
+}
 
 Organization.sendOTP = async (req: Request, res: Response) => {
   const { id } = req.body;

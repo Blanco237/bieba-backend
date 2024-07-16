@@ -12,6 +12,11 @@ class TOTP {
     const currentCounter = Math.floor((timestamp / 1000) / period);
     const prevCounter = currentCounter - 1;
     const nextCounter = currentCounter + 1;
+
+    // console.log('Current Timestamp:', timestamp);
+    // console.log('Current Counter:', currentCounter);
+    // console.log('Previous Counter:', prevCounter);
+    // console.log('Next Counter:', nextCounter);
     
     const keyBytes = Buffer.from(secretKey, 'hex');
     

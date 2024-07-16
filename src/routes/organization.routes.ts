@@ -15,6 +15,7 @@ router.post('/send-otp', Organization.sendOTP)
 router.post('/verify-otp', Organization.verifyOTP)
 router.post('/verify', Organization.verify)
 router.post('/update-callback', Organization.updateCallback)
+router.post('/get-user', Organization.getUser)
 
 
 export default router;

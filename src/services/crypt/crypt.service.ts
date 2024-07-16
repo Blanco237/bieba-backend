@@ -1,9 +1,8 @@
 import bcrypt from "bcrypt";
 import appConstants from "../../appConstants";
-import crypto from 'crypto'
+import crypto from "crypto";
 import hotp from "./hotp";
 import TOTP from "./totp";
-
 
 class Crypt {
   private saltRounds = 10;
@@ -11,8 +10,8 @@ class Crypt {
   private aes_iv: Buffer;
 
   constructor() {
-    this.aes_key = Buffer.from(appConstants.AES_ENC_KEY as string, 'base64')
-    this.aes_iv = Buffer.from(appConstants.AES_ENC_IV as string, 'base64')
+    this.aes_key = Buffer.from(appConstants.AES_ENC_KEY as string, "base64");
+    this.aes_iv = Buffer.from(appConstants.AES_ENC_IV as string, "base64");
   }
 
   async hash(text: string) {
@@ -34,34 +33,42 @@ class Crypt {
     }
   }
 
-  private genRandomString () {
-    const text = crypto.randomBytes(32).toString("base64").slice(0, -1)
+  private genRandomString() {
+    const text = crypto.randomBytes(32).toString("base64").slice(0, -1);
     return text;
-  } 
+  }
 
-  private encryptData(data: string): string {
-    const cipher = crypto.createCipheriv('aes-256-cbc', this.aes_key, this.aes_iv);
-    let encrypted = cipher.update(data, 'utf8', 'base64');
-    encrypted += cipher.final('base64');
+  encryptData(data: string): string {
+    const cipher = crypto.createCipheriv(
+      "aes-256-cbc",
+      this.aes_key,
+      this.aes_iv
+    );
+    let encrypted = cipher.update(data, "utf8", "base64");
+    encrypted += cipher.final("base64");
     return encrypted;
   }
 
   decryptData(encryptedData: string): string {
-    const decipher = crypto.createDecipheriv('aes-256-cbc', this.aes_key, this.aes_iv);
-    let decrypted = decipher.update(encryptedData, 'base64', 'utf8');
-    decrypted += decipher.final('utf8');
+    const decipher = crypto.createDecipheriv(
+      "aes-256-cbc",
+      this.aes_key,
+      this.aes_iv
+    );
+    let decrypted = decipher.update(encryptedData, "base64", "utf8");
+    decrypted += decipher.final("utf8");
     return decrypted;
   }
 
   genPusherMessage() {
-    const message = this.genRandomString();
+    const message = this.genAPIKEY();
     return message;
   }
 
   genAPIKEY() {
     const key = this.genRandomString();
     const regex = /[^a-zA-Z0-9]/g;
-    const cleaned = key.replace(regex, 'p');
+    const cleaned = key.replace(regex, "p");
     return cleaned;
   }
 
