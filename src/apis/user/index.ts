@@ -159,7 +159,7 @@ User.scan = async (req: Request, res: Response) => {
       { userID: id, orgID: org.id }
     );
     if (response.data.secrets_by_pk) {
-      return res.json({ name: org.name });
+      return res.json({ name: org.name, success: true });
     }
     const secret = crypt.genSECRET();
     const secRes = await graphql(
@@ -178,7 +178,7 @@ User.scan = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Could Not Register TOTP" });
     }
     const data = secRes.data.insert_secrets_one as Secret;
-    res.json({ name: org.name, secret: data.key });
+    res.json({ name: org.name, secret: data.key, success: true });
   } catch (e) {
     res.status(500).json(e);
   }

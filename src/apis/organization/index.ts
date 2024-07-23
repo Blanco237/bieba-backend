@@ -130,6 +130,7 @@ Organization.get = async (req: Request, res: Response) => {
             email
             id
             name
+            api_key
             secrets_aggregate {
               aggregate {
                 count
